@@ -42,8 +42,8 @@
 #include "yolov8_msgs/msg/detection_array.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include <vision_msgs/msg/detection3_d_array.hpp>
-#include <image_geometry/pinhole_camera_model.h>
-#include <cv_bridge/cv_bridge.h>
+#include <image_geometry/pinhole_camera_model.hpp>
+#include <cv_bridge/cv_bridge.hpp>
 
 namespace perception_system
 {
