@@ -1,17 +1,25 @@
 /*
-Copyright (c) 2024 José Miguel Guerrero Hernández
+The MIT License (MIT)
 
-Licensed under the Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) License;
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Copyright (c) 2024 Jose Miguel Guerrero Hernandez
 
-    https://creativecommons.org/licenses/by-sa/4.0/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
 #ifndef PERCEPTION_SYSTEM__PERCEPTION_LISTENER_HPP_
@@ -57,7 +65,8 @@ public:
     return uniqueInstance_;
   }
 
-  explicit PerceptionListener(std::shared_ptr<rclcpp_cascade_lifecycle::CascadeLifecycleNode> parent_node);
+  explicit PerceptionListener(
+    std::shared_ptr<rclcpp_cascade_lifecycle::CascadeLifecycleNode> parent_node);
 
   virtual ~PerceptionListener() {}
 
@@ -66,15 +75,19 @@ public:
   void set_interest(const std::string & type, bool status = true);
   std::vector<perception_system_interfaces::msg::Detection> get_by_id(const std::string & id);
   std::vector<perception_system_interfaces::msg::Detection> get_by_type(const std::string & type);
+  std::vector<perception_system_interfaces::msg::Detection> get_by_features(
+    const perception_system_interfaces::msg::Detection & object);
   // directly publish the TF
-  int publicTF(
+  int publishTF(
     const perception_system_interfaces::msg::Detection & detected_object,
     const std::string & custom_suffix = "");
-  void publicTFinterest();
-  // public tfs with custom sorting
-  void publicSortedTFinterest(
+  void publishTFinterest();
+  // publish tfs with custom sorting
+  void publishSortedTFinterest(
     std::function<bool(const perception_system_interfaces::msg::Detection &,
-    const perception_system_interfaces::msg::Detection &)> comp = [] (const perception_system_interfaces::msg::Detection & a, const perception_system_interfaces::msg::Detection & b) {
+    const perception_system_interfaces::msg::Detection &)> comp = [] (const
+    perception_system_interfaces::msg::Detection & a,
+    const perception_system_interfaces::msg::Detection & b) {
       // Default sorting behavior
       return a.center3d.position.z < b.center3d.position.z;
     });

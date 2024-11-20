@@ -1,17 +1,25 @@
 /*
-Copyright (c) 2024 José Miguel Guerrero Hernández
+The MIT License (MIT)
 
-Licensed under the Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) License;
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Copyright (c) 2024 Jose Miguel Guerrero Hernandez
 
-    https://creativecommons.org/licenses/by-sa/4.0/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
 
@@ -44,7 +52,7 @@ PerceptionListener::PerceptionListener(
   parent_node_->declare_parameter("tf_frame_camera", "head_front_camera_link_color_optical_frame");
   parent_node_->declare_parameter("tf_frame_map", "base_footprint");
 
-  parent_node_->get_parameter("max_time_perception", max_time_perception_);  
+  parent_node_->get_parameter("max_time_perception", max_time_perception_);
   parent_node_->get_parameter("max_time_interest", max_time_interest_);
   parent_node_->get_parameter("tf_frame_camera", tf_frame_camera_);
   parent_node_->get_parameter("tf_frame_map", tf_frame_map_);
@@ -69,7 +77,6 @@ void PerceptionListener::perception_callback(
   perception_system_interfaces::msg::DetectionArray::UniquePtr msg)
 {
   last_msg_ = std::move(msg);
-
 }
 
 // Check if last_perceptions_ elements are too old, and remove it
@@ -101,18 +108,17 @@ void PerceptionListener::update(double hz)
     }
   }
 
-
   // Check if last_perceptions_ elements are too old, and remove it
-  std::vector<std::string> to_remove_percetions;
+  std::vector<std::string> to_remove_perceptions;
   for (auto & perception : perceptions_) {
     auto now = rclcpp::Clock(RCL_STEADY_TIME).now();
     auto diff = now - perception.second.time;
     if (diff.seconds() > max_time_perception_) {
-      to_remove_percetions.push_back(perception.first);
+      to_remove_perceptions.push_back(perception.first);
     }
   }
 
-  for (auto & id : to_remove_percetions) {
+  for (auto & id : to_remove_perceptions) {
     perceptions_.erase(id);
   }
 
@@ -177,7 +183,6 @@ PerceptionListener::get_by_id(const std::string & id)
     }
   }
   return result;
-
 }
 
 // Create a vector from perceptions_ whose type match
@@ -195,7 +200,7 @@ PerceptionListener::get_by_type(const std::string & type)
 
 // Create a transform from map to object and send it
 int
-PerceptionListener::publicTF(
+PerceptionListener::publishTF(
   const perception_system_interfaces::msg::Detection & detected_object,
   const std::string & custom_suffix)
 {
@@ -232,25 +237,25 @@ PerceptionListener::publicTF(
     (custom_suffix.empty()) ? detected_object.unique_id : (detected_object.class_name + "_" +
     custom_suffix);
   map2object_msg.transform = tf2::toMsg(map2object);
-  
+
   tf_broadcaster_->sendTransform(map2object_msg);
   return 0;
 }
 
-// Public all the transforms in interests_ whose status is true
-void PerceptionListener::publicTFinterest()
+// Publish all the transforms in interests_ whose status is true
+void PerceptionListener::publishTFinterest()
 {
   for (auto & interest : interests_) {
     if (interest.second.status) {
       auto detections = get_by_type(interest.first);
       for (auto & detection : detections) {
-        publicTF(detection);
+        publishTF(detection);
       }
     }
   }
 }
 
-void PerceptionListener::publicSortedTFinterest(
+void PerceptionListener::publishSortedTFinterest(
   std::function<bool(
     const perception_system_interfaces::msg::Detection &,
     const perception_system_interfaces::msg::Detection &)> comp)
@@ -261,12 +266,30 @@ void PerceptionListener::publicSortedTFinterest(
       std::sort(detections.begin(), detections.end(), comp);
       int entity_counter = 0;
       for (auto & detection : detections) {
-        publicTF(detection, std::to_string(entity_counter));
+        publishTF(detection, std::to_string(entity_counter));
         entity_counter++;
       }
     }
   }
 }
 
+// void PerceptionListener::set_features(perception_system_interfaces::msg::Detection & person){}
+
+// Create a vector from perceptions_ whose type match with the features of the person
+std::vector<perception_system_interfaces::msg::Detection>
+PerceptionListener::get_by_features(const perception_system_interfaces::msg::Detection & object)
+{
+  std::vector<perception_system_interfaces::msg::Detection> result;
+  std::vector<perception_system_interfaces::msg::Detection> detections =
+    get_by_type(object.class_name);
+
+  for (auto & detection : detections) {
+    if (detection.unique_id == object.unique_id) {
+      result.push_back(detection);
+    }
+  }
+
+  return result;
+}
 
 }  // namespace perception_system

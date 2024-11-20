@@ -1,17 +1,25 @@
 /*
-  Copyright (c) 2024 José Miguel Guerrero Hernández
+The MIT License (MIT)
 
-  Licensed under the Attribution-ShareAlike 4.0 International (CC BY-SA 4.0) License;
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+Copyright (c) 2024 Jose Miguel Guerrero Hernandez
 
-      https://creativecommons.org/licenses/by-sa/4.0/
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
 #pragma once
@@ -53,60 +61,62 @@ inline double distance3D(double x1, double y1, double z1, double x2, double y2, 
   return std::sqrt(std::pow(x2 - x1, 2) + std::pow(y2 - y1, 2) + std::pow(z2 - z1, 2));
 }
 
-inline double calculateMedian(const cv::Mat& channel) {
+inline double calculateMedian(const cv::Mat & channel)
+{
     // Flatten the channel matrix into a single vector
-    std::vector<uchar> vecFromMat;
-    if (channel.isContinuous()) {
-        vecFromMat.assign(channel.datastart, channel.dataend);
-    } else {
-        for (int i = 0; i < channel.rows; ++i) {
-            vecFromMat.insert(vecFromMat.end(), channel.ptr<uchar>(i), channel.ptr<uchar>(i) + channel.cols);
-        }
+  std::vector<uchar> vecFromMat;
+  if (channel.isContinuous()) {
+    vecFromMat.assign(channel.datastart, channel.dataend);
+  } else {
+    for (int i = 0; i < channel.rows; ++i) {
+      vecFromMat.insert(vecFromMat.end(), channel.ptr<uchar>(i),
+          channel.ptr<uchar>(i) + channel.cols);
     }
+  }
 
     // Sort the vector to find the median
-    nth_element(vecFromMat.begin(), vecFromMat.begin() + vecFromMat.size() / 2, vecFromMat.end());
-    double median;
-    if (vecFromMat.size() % 2 == 0) {
-        median = (vecFromMat[vecFromMat.size() / 2 - 1] + vecFromMat[vecFromMat.size() / 2]) / 2.0;
-    } else {
-        median = vecFromMat[vecFromMat.size() / 2];
-    }
+  nth_element(vecFromMat.begin(), vecFromMat.begin() + vecFromMat.size() / 2, vecFromMat.end());
+  double median;
+  if (vecFromMat.size() % 2 == 0) {
+    median = (vecFromMat[vecFromMat.size() / 2 - 1] + vecFromMat[vecFromMat.size() / 2]) / 2.0;
+  } else {
+    median = vecFromMat[vecFromMat.size() / 2];
+  }
 
-    return median;
+  return median;
 }
 
-inline cv::Scalar findMostCommonHSVColor(const cv::Mat& hsv_image)
+inline cv::Scalar findMostCommonHSVColor(const cv::Mat & hsv_image)
 {
     // Split the image into H, S, V channels
-    std::vector<cv::Mat> hsv_channels;
-    cv::split(hsv_image, hsv_channels);
+  std::vector<cv::Mat> hsv_channels;
+  cv::split(hsv_image, hsv_channels);
 
-    cv::Mat h_channel = hsv_channels[0];
+  cv::Mat h_channel = hsv_channels[0];
 
     // Calculate the median of the H channel
-    double h_mode = calculateMedian(h_channel);
+  double h_mode = calculateMedian(h_channel);
 
-    cv::InputArray lowerColor = cv::Scalar(h_mode - 5, 0, 0);
-    cv::InputArray upperColor = cv::Scalar(h_mode + 5, 255, 255);
+  cv::InputArray lowerColor = cv::Scalar(h_mode - 5, 0, 0);
+  cv::InputArray upperColor = cv::Scalar(h_mode + 5, 255, 255);
 
-    cv::Mat mask;
-    cv::inRange(hsv_image, lowerColor, upperColor, mask);
-    auto masked_img = hsv_image.clone();
-    cv::bitwise_and(hsv_image, hsv_image, masked_img, mask);
+  cv::Mat mask;
+  cv::inRange(hsv_image, lowerColor, upperColor, mask);
+  auto masked_img = hsv_image.clone();
+  cv::bitwise_and(hsv_image, hsv_image, masked_img, mask);
 
-    std::vector<cv::Mat> proccessed_channels;
-    cv::split(masked_img, proccessed_channels);
+  std::vector<cv::Mat> proccessed_channels;
+  cv::split(masked_img, proccessed_channels);
 
-    cv::Mat s_channel = proccessed_channels[1];
-    cv::Mat v_channel = proccessed_channels[2];
+  cv::Mat s_channel = proccessed_channels[1];
+  cv::Mat v_channel = proccessed_channels[2];
 
-    cv::Scalar s_avg = cv::mean(s_channel);
-    double s_value = s_avg[0];
-    cv::Scalar v_avg = cv::mean(v_channel);
-    double v_value = v_avg[0];
+  cv::Scalar s_avg = cv::mean(s_channel);
+  double s_value = s_avg[0];
+  cv::Scalar v_avg = cv::mean(v_channel);
+  double v_value = v_avg[0];
 
-    return cv::Scalar(h_mode, s_value, v_value);
+  return cv::Scalar(h_mode, s_value, v_value);
 }
 
 inline std::vector<cv::Scalar> calculateMedianHalves(const cv::Mat & roi)
@@ -114,8 +124,9 @@ inline std::vector<cv::Scalar> calculateMedianHalves(const cv::Mat & roi)
   cv::Mat hsv;
   cv::cvtColor(roi, hsv, cv::COLOR_BGR2HSV);
   cv::Scalar up_avg = findMostCommonHSVColor(hsv(cv::Rect(0, 0, hsv.cols, hsv.rows / 2)));
-  cv::Scalar down_avg = findMostCommonHSVColor(hsv(cv::Rect(0, hsv.rows / 2, hsv.cols, hsv.rows / 2)));
-  
+  cv::Scalar down_avg = findMostCommonHSVColor(hsv(cv::Rect(0, hsv.rows / 2, hsv.cols,
+      hsv.rows / 2)));
+
   return {up_avg, down_avg};
 }
 
@@ -349,20 +360,24 @@ inline int body_pose(yolo_msgs::msg::KeyPoint3DArray skeleton)
   double body_position = -1;
 
   if (right_leg) {
-    auto distance = sqrt(pow(right_hip.x - right_knee.x, 2) + pow(right_hip.y - right_knee.y, 2) + pow(right_hip.z - right_knee.z, 2));
+    auto distance = sqrt(pow(right_hip.x - right_knee.x, 2) + pow(right_hip.y - right_knee.y,
+        2) + pow(right_hip.z - right_knee.z, 2));
     leg_position = (right_hip.y - right_knee.y) / distance;
   } else if (left_leg) {
-    auto distance = sqrt(pow(left_hip.x - left_knee.x, 2) + pow(left_hip.y - left_knee.y, 2) + pow(left_hip.z - left_knee.z, 2));
+    auto distance = sqrt(pow(left_hip.x - left_knee.x, 2) + pow(left_hip.y - left_knee.y,
+        2) + pow(left_hip.z - left_knee.z, 2));
     leg_position = (left_hip.y - left_knee.y) / distance;
   } else {
     return -1;
   }
-  
+
   if (right_body) {
-    auto distance = sqrt(pow(right_shoulder.x - right_hip.x, 2) + pow(right_shoulder.y - right_hip.y, 2) + pow(right_shoulder.z - right_hip.z, 2));
+    auto distance = sqrt(pow(right_shoulder.x - right_hip.x,
+        2) + pow(right_shoulder.y - right_hip.y, 2) + pow(right_shoulder.z - right_hip.z, 2));
     body_position = (right_shoulder.y - right_hip.y) / distance;
   } else if (left_body) {
-    auto distance = sqrt(pow(left_shoulder.x - left_hip.x, 2) + pow(left_shoulder.y - left_hip.y, 2) + pow(left_shoulder.z - left_hip.z, 2));
+    auto distance = sqrt(pow(left_shoulder.x - left_hip.x, 2) + pow(left_shoulder.y - left_hip.y,
+        2) + pow(left_shoulder.z - left_hip.z, 2));
     body_position = (left_shoulder.y - left_hip.y) / distance;
   } else {
     return -1;
