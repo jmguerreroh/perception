@@ -49,7 +49,7 @@ PerceptionListener::PerceptionListener(
   parent_node_->get_parameter("tf_frame_camera", tf_frame_camera_);
   parent_node_->get_parameter("tf_frame_map", tf_frame_map_);
   if (parent_node_->get_parameter("debug").as_bool()) {
-    parent_node_->add_activation("yolov8_debug_node");
+    parent_node_->add_activation("yolo_debug_node");
   }
 
   last_update_ = rclcpp::Clock(RCL_STEADY_TIME).now();

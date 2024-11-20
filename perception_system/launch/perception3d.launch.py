@@ -25,12 +25,12 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     perception_system_dir = get_package_share_directory('perception_system')
-    yolo_dir = get_package_share_directory('yolov8_bringup')
+    yolo_dir = get_package_share_directory('yolo_bringup')
 
     model = LaunchConfiguration('model')
     model_arg = DeclareLaunchArgument(
         'model', default_value=os.path.join(perception_system_dir, 'models',
-                                            'yolov8m.pt'),
+                                            'yolov8m-pose.pt'),
         description='Model name or path'
     )
 
@@ -42,7 +42,7 @@ def generate_launch_description():
 
     target_frame = LaunchConfiguration('target_frame')
     target_frame_arg = DeclareLaunchArgument(
-        'target_frame', default_value='head_front_camera_link',
+        'target_frame', default_value='oak-d-base-frame',
         description='Target frame to transform the 3D boxes'
     )
 
@@ -53,24 +53,24 @@ def generate_launch_description():
     input_image_topic = LaunchConfiguration('input_image_topic')
     input_image_topic_arg = DeclareLaunchArgument(
         'input_image_topic',
-        default_value='/head_front_camera/rgb/image_raw',
+        default_value='/rgb/image',
         description='Input image topic')
 
     input_depth_topic = LaunchConfiguration('input_depth_topic')
     input_depth_topic_arg = DeclareLaunchArgument(
         'input_depth_topic',
-        default_value='/head_front_camera/depth_registered/image_raw',
+        default_value='/stereo/depth',
         description='Input depth topic')
 
     input_depth_info_topic = LaunchConfiguration('input_depth_info_topic')
     input_depth_info_topic_arg = DeclareLaunchArgument(
         'input_depth_info_topic',
-        default_value='/head_front_camera/depth_registered/camera_info',
+        default_value='/stereo/camera_info',
         description='Input depth info topic')
 
     depth_image_units_divisor = LaunchConfiguration('depth_image_units_divisor')
     depth_image_units_divisor_arg = DeclareLaunchArgument(
-        'depth_image_units_divisor', default_value='1',
+        'depth_image_units_divisor', default_value='1000',
         # 1 value for simulation, 1000 value in real robot
         description='Depth image units divisor')
 
@@ -80,7 +80,7 @@ def generate_launch_description():
         default_value="0.5",
         description="Minimum probability of a detection to be published")
 
-    yolo3d_launch = os.path.join(yolo_dir, 'launch', 'yolov8_3d.launch.py')
+    yolo3d_launch = os.path.join(yolo_dir, 'launch', 'yolo.launch.py')
     yolo3d = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(yolo3d_launch),
         launch_arguments={
@@ -91,7 +91,8 @@ def generate_launch_description():
             'input_depth_info_topic': input_depth_info_topic,
             'depth_image_units_divisor': depth_image_units_divisor,
             'target_frame': target_frame,
-            'threshold': threshold
+            'threshold': threshold,
+            'use_3d': 'True',
             }.items()
     )
 
