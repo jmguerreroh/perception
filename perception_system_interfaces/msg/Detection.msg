@@ -24,4 +24,5 @@ int8 body_pose
 # object
 int8[] color_object
 
+float64 confidence
 sensor_msgs/Image image

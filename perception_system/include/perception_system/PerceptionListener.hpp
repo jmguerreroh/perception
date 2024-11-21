@@ -76,7 +76,7 @@ public:
   std::vector<perception_system_interfaces::msg::Detection> get_by_id(const std::string & id);
   std::vector<perception_system_interfaces::msg::Detection> get_by_type(const std::string & type);
   std::vector<perception_system_interfaces::msg::Detection> get_by_features(
-    const perception_system_interfaces::msg::Detection & object);
+    const perception_system_interfaces::msg::Detection & object, float confidence);
   // directly publish the TF
   int publishTF(
     const perception_system_interfaces::msg::Detection & detected_object,

@@ -277,7 +277,9 @@ void PerceptionListener::publishSortedTFinterest(
 
 // Create a vector from perceptions_ whose type match with the features of the person
 std::vector<perception_system_interfaces::msg::Detection>
-PerceptionListener::get_by_features(const perception_system_interfaces::msg::Detection & object)
+PerceptionListener::get_by_features(
+  const perception_system_interfaces::msg::Detection & object,
+  float confidence)
 {
   std::vector<perception_system_interfaces::msg::Detection> result;
   std::vector<perception_system_interfaces::msg::Detection> detections =
@@ -285,9 +287,15 @@ PerceptionListener::get_by_features(const perception_system_interfaces::msg::Det
 
   for (auto & detection : detections) {
     if (detection.unique_id == object.unique_id) {
+      detection.confidence = 1.0;
       result.push_back(detection);
     }
   }
+
+  std::sort(
+      result.begin(), result.end(), [this](const auto & a, const auto & b) {
+      return a.confidence < b.confidence;
+      });
 
   return result;
 }
