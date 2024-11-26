@@ -32,7 +32,7 @@ PeopleDetectionNode::PeopleDetectionNode(const rclcpp::NodeOptions & options)
     options)
 {
   // Create parameters
-  this->declare_parameter("target_frame", "head_front_camera_link");
+  this->declare_parameter("target_frame", "oak_rgb_camera_optical_frame");
   this->declare_parameter("debug", false);
   // Add the activation of the people detection node
   this->add_activation("yolo_node");

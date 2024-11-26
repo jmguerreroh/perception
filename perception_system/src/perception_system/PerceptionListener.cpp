@@ -49,7 +49,7 @@ PerceptionListener::PerceptionListener(
   parent_node_->declare_parameter("max_time_perception", 0.01);
   parent_node_->declare_parameter("max_time_interest", 0.01);
   parent_node_->declare_parameter("debug", false);
-  parent_node_->declare_parameter("tf_frame_camera", "head_front_camera_link_color_optical_frame");
+  parent_node_->declare_parameter("tf_frame_camera", "oak_rgb_camera_optical_frame");
   parent_node_->declare_parameter("tf_frame_map", "base_footprint");
 
   parent_node_->get_parameter("max_time_perception", max_time_perception_);

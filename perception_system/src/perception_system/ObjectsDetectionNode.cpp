@@ -33,7 +33,7 @@ ObjectsDetectionNode::ObjectsDetectionNode(const rclcpp::NodeOptions & options)
 {
   // Declare the parameters
   this->declare_parameter("classes", "all");
-  this->declare_parameter("target_frame", "oak-d-base_frame");
+  this->declare_parameter("target_frame", "oak_rgb_camera_optical_frame");
   this->declare_parameter("debug", false);
 
   // Add the activation of the objects detection node

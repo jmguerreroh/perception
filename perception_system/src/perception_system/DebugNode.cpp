@@ -30,7 +30,7 @@ namespace perception_system
 DebugNode::DebugNode(const rclcpp::NodeOptions & options)
 : rclcpp_cascade_lifecycle::CascadeLifecycleNode("perception_debug", "perception_system", options)
 {
-  this->declare_parameter("target_frame", "head_front_camera_link");
+  this->declare_parameter("target_frame", "oak_rgb_camera_optical_frame");
 }
 
 CallbackReturnT DebugNode::on_configure(const rclcpp_lifecycle::State & state)

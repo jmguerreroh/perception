@@ -50,7 +50,7 @@ def generate_launch_description():
 
     target_frame = LaunchConfiguration('target_frame')
     target_frame_arg = DeclareLaunchArgument(
-        'target_frame', default_value='oak-d-base-frame',
+        'target_frame', default_value='oak_rgb_camera_optical_frame',
         description='Target frame to transform the 3D boxes'
     )
 
