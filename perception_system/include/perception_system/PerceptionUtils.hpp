@@ -53,6 +53,11 @@ SOFTWARE.
 #include <image_geometry/pinhole_camera_model.hpp>
 #include <cv_bridge/cv_bridge.hpp>
 
+#include <tf2/LinearMath/Transform.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <Eigen/Dense>
+
 namespace perception_system
 {
 
@@ -735,6 +740,67 @@ erodeDetections(
     }
   }
   return eroded_yolo_result_msg;
+}
+
+// Define the type for the EKF state
+struct EKFState
+{
+  tf2::Transform transform;   // Estado del transform
+  Eigen::Matrix<double, 6, 6> covariance;   // Covarianza asociada
+};
+
+// Prediction function for the EKF
+inline void ekfPredict(
+  EKFState & state, const tf2::Transform & motion,
+  const Eigen::Matrix<double, 6, 6> & processNoise)
+{
+    // Update the state by predicting the motion
+  state.transform *= motion;
+
+    // Linearize the covariance
+    // Here, we assume that the Jacobian of the motion model is the identity matrix
+  state.covariance += processNoise;
+}
+
+// Update function for the EKF
+inline void ekfUpdate(
+  EKFState & state,
+  const tf2::Transform & measurement,
+  const Eigen::Matrix<double, 6, 6> & measurementNoise)
+{
+    // Convert the measurement into a vector
+  tf2::Vector3 measTranslation = measurement.getOrigin();
+  tf2::Quaternion measRotation = measurement.getRotation();
+
+  tf2::Vector3 stateTranslation = state.transform.getOrigin();
+  tf2::Quaternion stateRotation = state.transform.getRotation();
+
+    // Compute the innovation (difference between measurement and prediction)
+  Eigen::VectorXd innovation(6);
+  innovation << measTranslation.x() - stateTranslation.x(),
+    measTranslation.y() - stateTranslation.y(),
+    measTranslation.z() - stateTranslation.z(),
+    measRotation.x() - stateRotation.x(),
+    measRotation.y() - stateRotation.y(),
+    measRotation.z() - stateRotation.z();
+
+    // Compute the Kalman Gain
+  Eigen::Matrix<double, 6, 6> kalmanGain = state.covariance *
+    (state.covariance + measurementNoise).inverse();
+
+    // Update the state
+  Eigen::VectorXd correction = kalmanGain * innovation;
+
+  tf2::Vector3 correctionTranslation(correction(0), correction(1), correction(2));
+  tf2::Quaternion correctionRotation(correction(3), correction(4), correction(5), 0.0);
+
+  state.transform.setOrigin(stateTranslation + correctionTranslation);
+  tf2::Quaternion updatedRotation = stateRotation + correctionRotation;
+  updatedRotation.normalize();   // Ensure the quaternion remains valid
+  state.transform.setRotation(updatedRotation);
+
+    // Update the covariance matrix
+  state.covariance = (Eigen::Matrix<double, 6, 6>::Identity() - kalmanGain) * state.covariance;
 }
 
 } // namespace perception_system

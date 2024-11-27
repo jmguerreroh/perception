@@ -32,6 +32,8 @@ SOFTWARE.
 
 #include "perception_system_interfaces/msg/detection.hpp"
 #include "perception_system_interfaces/msg/detection_array.hpp"
+#include "perception_system/PerceptionUtils.hpp"
+
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -76,11 +78,14 @@ public:
   std::vector<perception_system_interfaces::msg::Detection> get_by_id(const std::string & id);
   std::vector<perception_system_interfaces::msg::Detection> get_by_type(const std::string & type);
   std::vector<perception_system_interfaces::msg::Detection> get_by_features(
-    const perception_system_interfaces::msg::Detection & object, float confidence);
+    const perception_system_interfaces::msg::Detection & object, const float confidence = 0.4);
   // directly publish the TF
-  int publishTF(
+  int publishTF_suffix(
     const perception_system_interfaces::msg::Detection & detected_object,
     const std::string & custom_suffix = "");
+  int publishTF_EKF(
+    const perception_system_interfaces::msg::Detection & detected_object,
+    const std::string & frame_name = "", const bool useEKF = true);
   void publishTFinterest();
   // publish tfs with custom sorting
   void publishSortedTFinterest(
@@ -115,6 +120,9 @@ private:
 
   std::string tf_frame_camera_;
   std::string tf_frame_map_;
+
+  tf2::Transform previousPosition_EKF_;
+  bool firstEKF_ = true;
 };
 
 }  // namespace perception_system

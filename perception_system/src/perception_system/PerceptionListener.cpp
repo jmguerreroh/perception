@@ -200,7 +200,7 @@ PerceptionListener::get_by_type(const std::string & type)
 
 // Create a transform from map to object and send it
 int
-PerceptionListener::publishTF(
+PerceptionListener::publishTF_suffix(
   const perception_system_interfaces::msg::Detection & detected_object,
   const std::string & custom_suffix)
 {
@@ -242,6 +242,80 @@ PerceptionListener::publishTF(
   return 0;
 }
 
+
+// Create a transform from map to object and send it
+int
+PerceptionListener::publishTF_EKF(
+  const perception_system_interfaces::msg::Detection & detected_object,
+  const std::string & frame_name, const bool useEKF)
+{
+  geometry_msgs::msg::TransformStamped map2camera_msg;
+  try {
+    map2camera_msg = tf_buffer_->lookupTransform(
+      tf_frame_map_, tf_frame_camera_,
+      tf2::TimePointZero);
+  } catch (const tf2::TransformException & ex) {
+    RCLCPP_INFO(
+      parent_node_->get_logger(), "Could not transform %s to %s: %s",
+      tf_frame_map_.c_str(), tf_frame_camera_.c_str(), ex.what());
+    return -1;
+  }
+
+  tf2::Transform camera2object;
+  camera2object.setOrigin(
+    tf2::Vector3(
+      detected_object.center3d.position.x,
+      detected_object.center3d.position.y,
+      detected_object.center3d.position.z));
+  camera2object.setRotation(tf2::Quaternion(0.0, 0.0, 0.0, 1.0));
+
+  tf2::Transform map2camera;
+  tf2::fromMsg(map2camera_msg.transform, map2camera);
+
+  tf2::Transform map2object = map2camera * camera2object;
+  // create a transform message from tf2::Transform
+  geometry_msgs::msg::TransformStamped map2object_msg;
+  map2object_msg.header.stamp = detected_object.header.stamp;
+  map2object_msg.header.frame_id = tf_frame_map_;
+  map2object_msg.child_frame_id = frame_name;
+
+  if (useEKF) {
+    if (firstEKF_) {
+      previousPosition_EKF_ = map2object;
+      firstEKF_ = false;
+    }
+
+    // Define process noise
+    Eigen::Matrix<double, 6, 6> processNoise = Eigen::Matrix<double, 6, 6>::Identity();
+    processNoise *= 0.01;
+
+    // Define measurement noise
+    Eigen::Matrix<double, 6, 6> measurementNoise = Eigen::Matrix<double, 6, 6>::Identity();
+    measurementNoise *= 0.01;
+
+    // Create the filter state
+    EKFState state;
+    state.transform = previousPosition_EKF_;
+    state.covariance = Eigen::Matrix<double, 6, 6>::Identity();
+
+    // Perform prediction step
+    ekfPredict(state, map2object, processNoise);
+
+    // Perform update step
+    ekfUpdate(state, map2object, measurementNoise);
+
+    previousPosition_EKF_ = state.transform;
+
+    map2object_msg.transform = tf2::toMsg(previousPosition_EKF_);
+  } else {
+    map2object_msg.transform = tf2::toMsg(map2object);
+  }
+
+  tf_broadcaster_->sendTransform(map2object_msg);
+
+  return 0;
+}
+
 // Publish all the transforms in interests_ whose status is true
 void PerceptionListener::publishTFinterest()
 {
@@ -249,7 +323,7 @@ void PerceptionListener::publishTFinterest()
     if (interest.second.status) {
       auto detections = get_by_type(interest.first);
       for (auto & detection : detections) {
-        publishTF(detection);
+        publishTF_suffix(detection);
       }
     }
   }
@@ -266,7 +340,7 @@ void PerceptionListener::publishSortedTFinterest(
       std::sort(detections.begin(), detections.end(), comp);
       int entity_counter = 0;
       for (auto & detection : detections) {
-        publishTF(detection, std::to_string(entity_counter));
+        publishTF_suffix(detection, std::to_string(entity_counter));
         entity_counter++;
       }
     }
@@ -279,15 +353,15 @@ void PerceptionListener::publishSortedTFinterest(
 std::vector<perception_system_interfaces::msg::Detection>
 PerceptionListener::get_by_features(
   const perception_system_interfaces::msg::Detection & object,
-  float confidence)
+  const float confidence)
 {
   std::vector<perception_system_interfaces::msg::Detection> result;
   std::vector<perception_system_interfaces::msg::Detection> detections =
     get_by_type(object.class_name);
 
   for (auto & detection : detections) {
-    if (detection.unique_id == object.unique_id) {
-      detection.confidence = 1.0;
+    float diff = diffIDs(detection.color_person, object.color_person);
+    if (diff <= confidence) {
       result.push_back(detection);
     }
   }
