@@ -257,7 +257,7 @@ inline int64_t getUniqueIDFromDetection(
 }
 
 
-inline float diffIDs(int64_t id1, ino64_t id2)
+inline float diffIDs(int64_t id1, int64_t id2)
 {
   // Get the HSV values from the unique IDs
   std::vector<cv::Scalar> scalar1 = getHSVFromUniqueID(id1);
