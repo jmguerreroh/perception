@@ -67,7 +67,7 @@ PerceptionListener::PerceptionListener(
   tf_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf_buffer_);
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(parent_node_.get());
 
-  std::string topic_name = "all_perceptions";
+  std::string topic_name = "/perception_system/all_perceptions";
   percept_sub_ = parent_node_->create_subscription<perception_system_interfaces::msg::DetectionArray>(
     topic_name, 10,
     std::bind(&PerceptionListener::perception_callback, this, std::placeholders::_1));
@@ -370,6 +370,45 @@ PerceptionListener::get_by_features(
       result.begin(), result.end(), [this](const auto & a, const auto & b) {
       return a.confidence < b.confidence;
       });
+
+  return result;
+}
+
+
+// This function returns a vector of detections sorted by their distance to the given position.
+// The distance is calculated as the euclidean distance between the center of the detection and the given position.
+std::vector<perception_system_interfaces::msg::Detection>
+PerceptionListener::get_detection_at(const geometry_msgs::msg::TransformStamped & position){
+  // Create a vector from perceptions_ whose tf is close to position and sorted by distance
+  std::vector<perception_system_interfaces::msg::Detection> result;
+  std::vector<perception_system_interfaces::msg::Detection> detections =
+    get_by_type("");
+  
+  typedef std::pair<float, perception_system_interfaces::msg::Detection> DistanceDetection;
+  std::vector<DistanceDetection> detections_with_distance;
+
+  for (auto & detection : detections) {
+    // get tf of detection
+    tf2::Transform detection_tf;
+    tf2::fromMsg(detection.center3d, detection_tf);
+    // get tf of position
+    tf2::Transform position_tf;
+    tf2::fromMsg(position.transform, position_tf);
+    // calculate distance
+    float distance = detection_tf.getOrigin().distance(position_tf.getOrigin());
+    // add detection to result
+    detections_with_distance.push_back(std::make_pair(distance, detection));
+  }
+
+  std::sort(
+      detections_with_distance.begin(), detections_with_distance.end(),
+      [](const DistanceDetection & a, const DistanceDetection & b) {
+      return a.first < b.first;
+      });
+
+  for (auto & detection : detections_with_distance) {
+    result.push_back(detection.second);
+  }
 
   return result;
 }

@@ -79,6 +79,8 @@ public:
   std::vector<perception_system_interfaces::msg::Detection> get_by_type(const std::string & type);
   std::vector<perception_system_interfaces::msg::Detection> get_by_features(
     const perception_system_interfaces::msg::Detection & object, const float confidence = 0.4);
+  std::vector<perception_system_interfaces::msg::Detection> get_detection_at(
+    const geometry_msgs::msg::TransformStamped & position);
   // directly publish the TF
   int publishTF_suffix(
     const perception_system_interfaces::msg::Detection & detected_object,
