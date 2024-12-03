@@ -279,7 +279,7 @@ inline float diffIDs(int64_t id1, int64_t id2)
 
   // Return the average difference between the two unique IDs in HSV space with a weight of 2 for H and 1 for S and V
   return (diff_h_up[0] * 2 + diff_s_up[0] + diff_v_up[0] + diff_h_down[0] * 2 + diff_s_down[0] +
-         diff_v_down[0]) / 6;
+         diff_v_down[0]) / 8;
 }
 
 inline std::string underscore(std::string str)
