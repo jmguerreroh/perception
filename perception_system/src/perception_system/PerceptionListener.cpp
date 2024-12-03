@@ -361,7 +361,7 @@ PerceptionListener::get_by_features(
 
   for (auto & detection : detections) {
     float diff = diffIDs(detection.color_person, object.color_person);
-    if (diff <= confidence) {
+    if ((1-diff) >= confidence) {
       result.push_back(detection);
     }
   }
