@@ -208,7 +208,7 @@ PerceptionListener::publishTF_suffix(
   try {
     map2camera_msg = tf_buffer_->lookupTransform(
       tf_frame_map_, tf_frame_camera_,
-      tf2::TimePointZero);
+      tf2_ros::fromMsg(detected_object.header.stamp));
   } catch (const tf2::TransformException & ex) {
     RCLCPP_INFO(
       parent_node_->get_logger(), "Could not transform %s to %s: %s",
@@ -253,7 +253,7 @@ PerceptionListener::publishTF_EKF(
   try {
     map2camera_msg = tf_buffer_->lookupTransform(
       tf_frame_map_, tf_frame_camera_,
-      tf2::TimePointZero);
+      tf2_ros::fromMsg(detected_object.header.stamp));
   } catch (const tf2::TransformException & ex) {
     RCLCPP_INFO(
       parent_node_->get_logger(), "Could not transform %s to %s: %s",
