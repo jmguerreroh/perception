@@ -293,6 +293,11 @@ inline double arm_distance(double x1, double y1, double x2, double y2)
   return std::sqrt(std::pow(x2 - x1, 2) + std::pow(y2 - y1, 2));
 }
 
+inline double distance(double x1, double y1, double x2, double y2)
+{
+  return std::sqrt(std::pow(x2 - x1, 2) + std::pow(y2 - y1, 2));
+}
+
 inline int points_direction(double x1, double y1, double x2, double y2)
 {
   // Calculate the change in x and y
@@ -801,6 +806,181 @@ inline void ekfUpdate(
 
   // Update the covariance matrix
   state.covariance = (Eigen::Matrix<double, 6, 6>::Identity() - kalmanGain) * state.covariance;
+}
+
+
+inline geometry_msgs::msg::Pose position_person(yolo_msgs::msg::KeyPoint3DArray skeleton)
+{
+  // 0: Nose, 1: Left Eye, 2: Right Eye, 3: Left Ear, 4: Right Ear, 5: Left Shoulder, 6: Right Shoulder, 
+  // 7: Left Elbow, 8: Right Elbow, 9: Left Wrist, 10: Right Wrist, 11: Left Hip, 12: Right Hip, 
+  // 13: Left Knee, 14: Right Knee, 15: Left Ankle, 16: Right Ankle,
+  geometry_msgs::msg::Point left_hip, left_shoulder, left_knee;
+  geometry_msgs::msg::Point right_hip, right_shoulder, right_knee;
+  //geometry_msgs::msg::Point nose, left_eye, right_eye, left_ear, right_ear;
+  geometry_msgs::msg::Pose position;
+  // position not found
+  position.position.x = -1;
+  position.position.y = -1;
+  position.position.z = -1;
+
+  bool left_hip_found = false;
+  bool left_shoulder_found = false;
+  bool left_knee_found = false;
+  bool right_hip_found = false;
+  bool right_shoulder_found = false;
+  bool right_knee_found = false;
+  /*bool nose_found = false;
+  bool left_eye_found = false;
+  bool right_eye_found = false;
+  bool left_ear_found = false;
+  bool right_ear_found = false;*/
+
+  geometry_msgs::msg::Point head;
+  bool head_found = false;
+  double score_head = 0;
+
+
+  for (auto keypoint : skeleton.data) {
+    switch (keypoint.id) {
+      case 5:
+        left_shoulder = keypoint.point;
+        left_shoulder_found = true;
+        break;
+      case 6:
+        right_shoulder = keypoint.point;
+        right_shoulder_found = true;
+        break;
+      case 11:
+        left_hip = keypoint.point;
+        left_hip_found = true;
+        break;
+      case 12:
+        right_hip = keypoint.point;
+        right_hip_found = true;
+        break;
+      case 13:
+        left_knee = keypoint.point;
+        left_knee_found = true;
+        break;
+      case 14:
+        right_knee = keypoint.point;
+        right_knee_found = true;
+        break;
+      case 0:
+        // nose = keypoint.point;
+        // nose_found = true;
+        if (keypoint.score > score_head) {
+          head = keypoint.point;
+          score_head = keypoint.score;
+          head_found = true;
+        }
+        break;
+      case 1:
+        // left_eye = keypoint.point;
+        // left_eye_found = true;
+        if (keypoint.score > score_head) {
+          head = keypoint.point;
+          score_head = keypoint.score;
+          head_found = true;
+        }
+        break;
+      case 2:
+        // right_eye = keypoint.point;
+        // right_eye_found = true;
+        if (keypoint.score > score_head) {
+          head = keypoint.point;
+          score_head = keypoint.score;
+          head_found = true;
+        }
+        break;
+      case 3:
+        // left_ear = keypoint.point;
+        // left_ear_found = true;
+        if (keypoint.score > score_head) {
+          head = keypoint.point;
+          score_head = keypoint.score;
+          head_found = true;
+        }
+        break;
+      case 4:
+        // right_ear = keypoint.point;
+        // right_ear_found = true;
+        if (keypoint.score > score_head) {
+          head = keypoint.point;
+          score_head = keypoint.score;
+          head_found = true;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  
+  if (left_hip_found || right_hip_found) {
+    if (left_hip_found && right_hip_found) {
+      // medium distance between the two hips
+      position.position.x = (left_hip.x + right_hip.x) / 2;
+      position.position.y = (left_hip.y + right_hip.y) / 2;
+      position.position.z = (left_hip.z + right_hip.z) / 2;
+    } else if (left_hip_found) {
+      position.position.x = left_hip.x;
+      position.position.y = left_hip.y;
+      position.position.z = left_hip.z;
+    } else {
+      position.position.x = right_hip.x;
+      position.position.y = right_hip.y;
+      position.position.z = right_hip.z;
+    }
+    return position;
+  }
+
+  // if the hips are not found, use the shoulders
+  if (left_shoulder_found || right_shoulder_found) {
+    if (left_shoulder_found && right_shoulder_found) {
+      // medium distance between the two shoulders
+      position.position.x = (left_shoulder.x + right_shoulder.x) / 2;
+      position.position.y = (left_shoulder.y + right_shoulder.y) / 2;
+      position.position.z = (left_shoulder.z + right_shoulder.z) / 2;
+    } else if (left_shoulder_found) {
+      position.position.x = left_shoulder.x;
+      position.position.y = left_shoulder.y;
+      position.position.z = left_shoulder.z;
+    } else {
+      position.position.x = right_shoulder.x;
+      position.position.y = right_shoulder.y;
+      position.position.z = right_shoulder.z;
+    }
+    return position;
+  }
+
+  // if the shoulders are not found, use the head
+  if (head_found) {
+    position.position.x = head.x;
+    position.position.y = head.y;
+    position.position.z = head.z;
+    return position;
+  }
+
+  // if hip, shoulders and head are not found, use the knees
+  if (left_knee_found || right_knee_found) {
+    if (left_knee_found && right_knee_found) {
+      // medium distance between the two knees
+      position.position.x = (left_knee.x + right_knee.x) / 2;
+      position.position.y = (left_knee.y + right_knee.y) / 2;
+      position.position.z = (left_knee.z + right_knee.z) / 2;
+    } else if (left_knee_found) {
+      position.position.x = left_knee.x;
+      position.position.y = left_knee.y;
+      position.position.z = left_knee.z;
+    } else {
+      position.position.x = right_knee.x;
+      position.position.y = right_knee.y;
+      position.position.z = right_knee.z;
+    }
+    return position;
+  }
+
+  return position;
 }
 
 } // namespace perception_system

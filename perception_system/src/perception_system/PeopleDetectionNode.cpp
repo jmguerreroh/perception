@@ -148,7 +148,14 @@ void PeopleDetectionNode::callback(
       perception.bbox2d.x = detection.bbox.size.x;
       perception.bbox2d.y = detection.bbox.size.y;
       perception.bbox2d.z = 0.0;
-      perception.center3d = detection.bbox3d.center;
+      // if person detection has 3D keypoints, use them to calculate the 3D position
+      geometry_msgs::msg::Pose pose = position_person(detection.keypoints3d);
+      if (pose.position.x != -1 && pose.position.y != -1 && pose.position.z != -1) {
+        perception.center3d = pose;
+      } else {
+        perception.center3d = detection.bbox3d.center;
+      }
+      perception.center3d = position_person(detection.keypoints3d);
       perception.bbox3d = detection.bbox3d.size;
 
       cv::Point2d min_pt = cv::Point2d(

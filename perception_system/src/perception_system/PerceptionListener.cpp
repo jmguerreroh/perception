@@ -360,8 +360,7 @@ PerceptionListener::get_by_features(
     get_by_type(object.class_name);
 
   for (auto & detection : detections) {
-    float diff = diffIDs(detection.color_person, object.color_person);
-    if ((1-diff) >= confidence) {
+    if ( object.score >= confidence) {
       result.push_back(detection);
     }
   }
