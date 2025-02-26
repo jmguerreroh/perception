@@ -33,6 +33,8 @@ int main(int argc, char * argv[])
   auto node = std::make_shared<rclcpp_cascade_lifecycle::CascadeLifecycleNode>(
     "node_test");
   node->add_activation("/perception_system/perception_people_detection");
+
+  // Run it manually from terminal
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_CONFIGURE);
   node->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_ACTIVATE);
 
@@ -43,10 +45,6 @@ int main(int argc, char * argv[])
 
     std::vector<perception_system_interfaces::msg::Detection> detections;
     detections = pl::getInstance(node)->get_by_type("person");
-
-    if (detections.empty()) {
-      // RCLCPP_ERROR(node->get_logger(), "No detections");
-    }
   }
 
 

@@ -119,6 +119,7 @@ private:
   double max_time_perception_;
   double max_time_interest_;
   rclcpp::Time last_update_;
+  rclcpp::Time last_msg_time_;
 
   std::string tf_frame_camera_;
   std::string tf_frame_map_;

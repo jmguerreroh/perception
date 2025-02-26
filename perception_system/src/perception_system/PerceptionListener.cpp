@@ -77,6 +77,7 @@ void PerceptionListener::perception_callback(
   perception_system_interfaces::msg::DetectionArray::UniquePtr msg)
 {
   last_msg_ = std::move(msg);
+  last_msg_time_ = rclcpp::Clock(RCL_STEADY_TIME).now();
 }
 
 // Check if last_perceptions_ elements are too old, and remove it
@@ -105,6 +106,10 @@ void PerceptionListener::update(double hz)
             detection.unique_id,
             {detection.type, detection, rclcpp::Clock(RCL_STEADY_TIME).now()}));
       }
+    }
+    auto diff_msg = now_update - last_msg_time_;
+    if (diff_msg.seconds() > (max_time_perception_*2)) {
+      last_msg_ = nullptr;
     }
   }
 
